@@ -12,7 +12,7 @@ class MapGrabber {
 		// ---
 		this.currentMapNum = Number(0)
 		this.currentGameNum = Number(0)
-		this.mapPath = String('./assets/maps/' + this.currentGameNum + '/')
+		this.mapPath = String('assets/maps/' + this.currentGameNum + '/')
 		// ---
 		this.mousePosition = { x: Number(0), y: Number(0), z: Number(0) }
 		this.mousePositionOnMap = { x: Number(0), y: Number(0), z: Number(0) }
