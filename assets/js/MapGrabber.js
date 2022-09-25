@@ -12,7 +12,7 @@ class MapGrabber {
 		// ---
 		this.currentMapNum = Number(0)
 		this.currentGameNum = Number(0)
-		this.mapPath = String('assets/maps/' + this.currentGameNum + '/')
+		this.mapPath = String('./assets/maps/' + this.currentGameNum + '/')
 		// ---
 		this.mousePosition = { x: Number(0), y: Number(0), z: Number(0) }
 		this.mousePositionOnMap = { x: Number(0), y: Number(0), z: Number(0) }
@@ -170,8 +170,9 @@ class MapGrabber {
 			document.getElementById('poiposx').value = this.realPositionOnMap.x
 			document.getElementById('poiposy').value = this.realPositionOnMap.y
 			document.getElementById('poiposz').value = this.realPositionOnMap.z
-			loopmap.style.backgroundPositionX = (0 - this.realPositionOnMap.x + 100) + 'px'
-			loopmap.style.backgroundPositionY = (0 - (this.mapHeight - this.mousePositionOnMap.y) + 100) + 'px'//(0 - this.realPositionOnMap.y - 100) + 'px'
+			loopmap.style.backgroundImage = "url('" + this.mapPath + this.currentSave.maps[this.currentMapNum].src + "')";
+			loopmap.style.backgroundPositionX = (0 - this.realPositionOnMap.x + 75) + 'px'
+			loopmap.style.backgroundPositionY = (0 - (this.mapHeight - this.mousePositionOnMap.y) + 75) + 'px'//(0 - this.realPositionOnMap.y - 100) + 'px'
 		}
 	}
 	removeModal() {
