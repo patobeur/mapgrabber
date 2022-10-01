@@ -15,7 +15,6 @@ class LocalStorageDealer {
 	}
 	// -----------------------------------------------------------------------
 	init() {
-
 		this.checkDatas()
 		// this.storedDatas = {
 		// 	types: localStorage.getItem(this.gameName + '_types'),
@@ -33,6 +32,20 @@ class LocalStorageDealer {
 		// 	localStorage.setItem(this.gameName + '_maps', JSON.stringify(this.saveZero.maps));
 		// 	localStorage.setItem(this.gameName + '_pois', JSON.stringify(this.saveZero.pois));
 		// }
+	}
+	deleteLocalStorage() {
+		// for (let saveNum = 0; saveNum < this.maxSave; saveNum++) {
+		// 	this.checks.forEach(item => {
+		// 		let itemName = this.gameName + '_' + saveNum + '_' + item
+		// 		let storedItem = localStorage.getItem(itemName)
+		// 		if (storedItem || storedItem != null) {
+		// 			localStorage.removeItem(itemName)
+		// 		}
+		// 		this.AllSavedDatas = []
+		// 	})
+		// }
+		localStorage.clear()
+		this.init()
 	}
 	get_currentSave() {
 		let currentsave = this.AllSavedDatas[this.currentSave]

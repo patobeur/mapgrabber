@@ -10,6 +10,7 @@ class Core {
 	}
 	// -----------------------------------------------------------------------
 	init() {
+		// this.StorageDealer.deleteLocalStorage()
 		this.currentSave = this.StorageDealer.get_currentSave()
 		this.MapGrabber.start(this.currentSave)
 		// console.log('1', this.currentSave)

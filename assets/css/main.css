@@ -32,7 +32,7 @@ body {
 	cursor: crosshair;
 	box-shadow: inset 0 0 50px black;
 	z-index: 1;
-	border: 2px solid white;
+	/* border: 2px solid white; */
 	-webkit-user-select: none;
 	-moz-user-select: none;
 	-ms-user-select: none;
@@ -75,9 +75,9 @@ body.grabed>#map{
 	white-space: nowrap;
 	border-radius: .5rem;
 	/* padding:.5rem; */
-	border: 1px dotted rgb(255, 0, 0);
+	/* border: 1px dotted rgb(255, 0, 0); */
 	box-shadow: 2px 2px 20px black;
-	transform: rotate(-2deg);
+	/* transform: rotate(-2deg); */
 }
 .actions {
 	position: relative;
@@ -93,7 +93,7 @@ body.grabed>#map{
 .action {
 	position: relative;
 	/* margin:.5rem; */
-	background-color: rgb(255, 251, 127);
+	background-color: rgba(255, 255, 255, 0.82);
 	/* margin: 0 0 .5rem 0; */
 	/* width: 100px;
 	height: 100px; */
@@ -146,7 +146,8 @@ body.grabed>#map{
 	width: 4rem;
 }
 
-button{
+button {
+	position: relative;
 	cursor: pointer;
 	padding: .2rem 1rem;
 	margin: .2rem 0 .2rem 0;
@@ -187,4 +188,38 @@ button{
 
 textarea {
 	width: 100%;
+}
+.poitoolsitems {
+	padding:.5rem;
+}
+input {
+	border:0px;
+	background-color: rgba(255, 255, 255, 0.824);
+	font-weight: bold;
+	border-bottom: 1px dotted rgba(0, 0, 0, 0.591);
+}
+#typico {
+	width:100%;
+	display: flex;
+	flex-wrap: wrap;
+}
+#poiiddiv{
+	position: relative;
+}
+#icolist {
+	display: flex;
+	width:calc(9*1.5rem);
+	flex-wrap: wrap;
+}
+.icolistitem {
+	width:1.5rem;
+	background-color: rgb(255, 255, 255);
+	border:1px solid rgba(0, 0, 0, 0.37);
+	text-align: center;
+}
+.icolistitem:hover {transform: scale(1.4);
+}
+.icolistitem.up {
+	background-color: rgb(16, 170, 29);
+	border:1px solid black;
 }

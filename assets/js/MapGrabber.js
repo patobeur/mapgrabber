@@ -1,41 +1,47 @@
 'use strict';
 class MapGrabber {
 	constructor() {
+		this.activeBoard = false
 		this.isPause = false
 		this.isDown = false
 		// ---
+		this.zoom = {
+			active: true,
+			ratio: 1,
+			pos: 7,
+			list: [.2, .5, .6, .7, .8, .9, 1, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.8, 2, 2.5],
+			getRatio: () => { return this.zoom.active ? this.zoom.ratio : 1 }
+		}
 		// ---
 		this.icoHalfSize = Number(7) // in px
-		this.mpp = 10; // meters per Pixel
-		this.ratioZoom = 1
-		this.ratio = { pos: 6, set: [.5, .6, .7, .8, .9, 1, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.8, 2, 2.5] }
+		this.loopHalfSize = Number(75) // in px
 		// ---
 		this.currentMapNum = Number(0)
 		this.currentGameNum = Number(0)
 		this.mapPath = String('./assets/maps/' + this.currentGameNum + '/')
 		// ---
-		this.mousePosition = { x: Number(0), y: Number(0), z: Number(0) }
+		this.mousePositionOnScreen = { x: Number(0), y: Number(0), z: Number(0) }
 		this.mousePositionOnMap = { x: Number(0), y: Number(0), z: Number(0) }
 		this.realPositionOnMap = { x: Number(0), y: Number(0), z: Number(1) }
 		this.mapOffset = [Number(0), Number(0)]
 		this.MapPos = { x: Number(0), y: Number(0), z: Number(0) }
+
 		this.mapWidth
 		this.mapHeight
 		// ---
 		this.modalActive = false
 		// ---
+		this.allCurrentPois = []
 		this.init()
 	}
 	// -----------------------------------------------------------------------
 	init() {
-		let divs = ['topModalDiv']
 		// store element from dom before removing them
+		let divs = ['topModalDiv']
 		divs.forEach(element => {
 			this[element] = document.getElementById(element)
 			this[element].remove()
-			// console.log(this[element])
-		}
-		);
+		});
 	}
 	start(currentSave) {
 		this.currentSave = currentSave
@@ -45,135 +51,160 @@ class MapGrabber {
 		this.addListener()
 	}
 	// -----------------------------------------------------------------------
+	set_mapOffset(event) {
+		this.mapOffset = [
+			this.wordlDiv.offsetLeft - event.clientX,
+			this.wordlDiv.offsetTop - event.clientY
+		];
+	}
+	set_mousePositionOnScreen(event) {
+		this.mousePositionOnScreen = {
+			x: event.clientX,
+			y: event.clientY
+		};
+	}
+	set_MapPos() {
+		this.MapPos.x = Number(this.mousePositionOnScreen.x + this.mapOffset[0])
+		this.MapPos.y = Number(this.mousePositionOnScreen.y + this.mapOffset[1])
+	}
+	set_mousePositionOnMap() {
+		this.mousePositionOnMap.x = this.mousePositionOnScreen.x - this.MapPos.x;
+		this.mousePositionOnMap.y = this.mousePositionOnScreen.y - this.MapPos.y;
+	}
+	set_realPositionOnMap() {
+		this.realPositionOnMap = {
+			x: Math.floor(this.mousePositionOnMap.x / this.zoom.getRatio()),
+			y: Math.floor(this.mapHeight - (this.mousePositionOnMap.y / this.zoom.getRatio())),
+			z: 0
+		};
+	}
+	refresh_wordlDivPos() {
+		this.wordlDiv.style.left = this.MapPos.x + 'px';
+		this.wordlDiv.style.top = this.MapPos.y + 'px';
+	}
+	// -----------------------------------------------------------------------
 	addListener() {
+		document.addEventListener('contextmenu', (event) => {
+			this.set_mousePositionOnScreen(event)
+			event.preventDefault();
+			if (event.target.id === 'map') {
+				// this.set_MapPos()
+				this.set_mousePositionOnMap()
+				this.set_realPositionOnMap()
+				this.refreshBoardInfo()
+				if (!this.modalActive) this.addModal(false);
+			}
+		});
+		document.addEventListener('mousemove', (event) => {
+			this.set_mousePositionOnScreen(event)
+			if (event.target.id === 'map') {
+				this.set_mousePositionOnMap()
+				this.set_realPositionOnMap()
+
+				if (this.isDown) {
+					this.set_MapPos()
+					this.refresh_wordlDivPos()
+				}
+			}
+			this.refreshBoardInfo()
+		}, true);
 		document.addEventListener('mousedown', (event) => {
-			// when document is clicked
-			// console.log(event.buttons, event.button)
-			// if left click and map is target
 			if (event.buttons === 1 && event.target.id === 'map') {
 				this.isDown = true;
-				this.mapOffset = [
-					this.wordlDiv.offsetLeft - event.clientX,
-					this.wordlDiv.offsetTop - event.clientY
-				];
-				// this.wordlDiv.classList.add('grabed')
+				this.set_mapOffset(event)
 				document.body.classList.add('grabed')
 			}
 		}, true);
 		document.addEventListener('mouseup', (event) => {
-			// console.log(event.buttons, event.button)
 			if (event.buttons === 0) {
 				this.isDown = false;
-				// this.wordlDiv.classList.remove('grabed')
 				document.body.classList.remove('grabed')
 			}
 		}, true);
-		document.addEventListener('mousemove', (event) => {
-			// event.preventDefault();
-			this.mousePosition = {
-				x: event.clientX,
-				y: event.clientY
-			};
-			let ok = { x: false, y: false }
-
-			if (this.isDown) {
-				let tMapPos = {
-					x: Number(this.mousePosition.x + this.mapOffset[0]),
-					y: Number(this.mousePosition.y + this.mapOffset[1])
-				}
-				// if (tMapPos.x <= 0 && tMapPos.x >= window.innerWidth - (this.wordlDiv.offsetWidth)) {
-				this.MapPos.x = tMapPos.x
-				this.wordlDiv.style.left = this.MapPos.x + 'px';
-				// ok.x = true
-				// }
-				// if (0 >= tMapPos.y && tMapPos.y >= (window.innerHeight - (this.wordlDiv.offsetHeight))) {
-				this.MapPos.y = tMapPos.y
-				this.wordlDiv.style.top = this.MapPos.y + 'px';
-				// ok.y = true
-				// }
-			}
-			this.refreshBoardInfo()
-
-		}, true);
-		document.addEventListener('contextmenu', (event) => {
-			// event.preventDefault();
-		});
-
-		this.wordlDiv.addEventListener('mousemove', (event) => {
-			if (!this.isDown) {
-				this.mousePosition = {
-					x: event.clientX,
-					y: event.clientY
-				};
-				let newMousePositionOnMapX = this.mousePosition.x - this.MapPos.x
-				let newMousePositionOnMapY = this.wordlDiv.offsetHeight - this.mousePosition.y + this.MapPos.y
-
-				this.realPositionOnMap = {
-					x: Math.floor(newMousePositionOnMapX / this.ratioZoom),
-					y: Math.floor(newMousePositionOnMapY / this.ratioZoom),
-					z: 0
-				};
-				// grabbing and mooving limites rules
-				// this.mousePositionOnMap.x = (newX > 0 && newX < (this.mapWidth * this.ratioZoom)) ? newX : false;
-				// this.mousePositionOnMap.y = (newY > 0 && newY < (this.mapHeight * this.ratioZoom)) ? (this.mapHeight * this.ratioZoom) - newY : false;
-
-				this.mousePositionOnMap.x = newMousePositionOnMapX;
-				this.mousePositionOnMap.y = newMousePositionOnMapY;
-
-				this.refreshBoardInfo()
-			}
-
-		}, true);
-		this.wordlDiv.addEventListener('contextmenu', (event) => {
-			event.preventDefault();
-			this.refreshBoardInfo()
-			if (!this.modalActive) this.addModal();
-		})
 		onwheel = (event) => {
-
-			console.log(event.ctrlKey)
-			// if (event.ctrlKey) event.preventDefault();
-			this.ratio.pos += event.wheelDelta < 0 ? -1 : 1;
+			if (event.ctrlKey) event.preventDefault();
+			this.zoom.pos += event.wheelDelta < 0 ? -1 : 1;
 			// min & max
-			this.ratio.pos = this.ratio.pos < 0
+			this.zoom.pos = this.zoom.pos < 0
 				? 0
-				: this.ratio.pos >= this.ratio.set.length
-					? this.ratio.set.length - 1
-					: this.ratio.pos;
-
-
-			this.ratioZoom = this.ratio.set[this.ratio.pos]
-			this.resizeMap()
+				: this.zoom.pos >= this.zoom.list.length
+					? this.zoom.list.length - 1
+					: this.zoom.pos;
+			this.zoom.ratio = this.zoom.list[this.zoom.pos]
+			this.set_mapScale()
+			this.refreshBoardInfo()
 		};
 	}
-	resizeMap() {
-		// console.log(this.ratioZoom)
-		this.wordlDiv.style.scale = this.ratioZoom
+	set_mapScale() {
+		let ratio = this.zoom.getRatio()
+		this.wordlDiv.style.scale = ratio
 	}
 	// -----------------------------------------------------------------------
 	// -----------------------------------------------------------------------
-	addModal() {
+	addModal(poiId = false) {
 		if (!this.modalActive) {
 			this.modalActive = true
-			this.topModalDiv.addEventListener('click', ele => {
-				if (ele.target.id === "topModalDiv") this.removeModal();
+			this.topModalDiv.addEventListener('click', event => {
+				if (event.target.id === "topModalDiv") this.removeModal();
 			})
-			this.topModalDiv.addEventListener('contextmenu', (ele) => {
-				ele.preventDefault();
-				if (ele.target.id === "topModalDiv") this.removeModal();
+			this.topModalDiv.addEventListener('contextmenu', (event) => {
+				event.preventDefault();
+				if (event.target.id === "topModalDiv") this.removeModal();
 			})
 			document.body.appendChild(this.topModalDiv)
-			let loopmap = document.getElementById('loopmap')
-			loopmap.style.width = this.mapWidth + 'px'
-			loopmap.style.height = this.mapHeight + 'px'
-
-			document.getElementById('poiposx').value = this.realPositionOnMap.x
-			document.getElementById('poiposy').value = this.realPositionOnMap.y
-			document.getElementById('poiposz').value = this.realPositionOnMap.z
-			loopmap.style.backgroundImage = "url('" + this.mapPath + this.currentSave.maps[this.currentMapNum].src + "')";
-			loopmap.style.backgroundPositionX = (0 - this.realPositionOnMap.x + 75) + 'px'
-			loopmap.style.backgroundPositionY = (0 - (this.mapHeight - this.mousePositionOnMap.y) + 75) + 'px'//(0 - this.realPositionOnMap.y - 100) + 'px'
+			this.refresh_currentPoiDatasForm(Number(poiId))
 		}
+	}
+	refresh_currentPoiDatasForm(poiId = false) {
+
+		let loopmap = document.getElementById('loopmap')
+		loopmap.style.width = this.mapWidth + 'px'
+		loopmap.style.height = this.mapHeight + 'px'
+		loopmap.style.backgroundImage = "url('" + this.mapPath + this.currentSave.maps[this.currentMapNum].src + "')";
+		loopmap.style.backgroundSize = (this.mapWidth) + "px " + (this.mapHeight) + "px";
+		if (poiId >= 0) {
+			this.currentPoi = this.currentSave.pois[poiId]
+		} else {
+			this.currentPoi = {
+				gameid: this.currentGameNum,
+				mapid: this.currentMapNum,
+				type: 1,
+				pos: {
+					x: this.realPositionOnMap.x,
+					y: this.realPositionOnMap.y,
+					z: this.mousePositionOnMap.z
+				},
+				name: "New",
+				comment: "New comment.",
+				shop: false,
+				quest: false
+			}
+		}
+		loopmap.style.backgroundPositionX = Math.floor(0 - this.currentPoi.pos.x + this.loopHalfSize) + 'px'
+		loopmap.style.backgroundPositionY = Math.floor(0 - this.mapHeight + this.currentPoi.pos.y + this.loopHalfSize) + 'px'
+		let icolist = document.getElementById('icolist')
+		if (icolist.childNodes.length < 1) {
+			let iter = 0;
+			let classname = "icolistitem";
+			this.currentSave.types.forEach(element => {
+				let itemType = this.createEle('div', 'ico_' + iter, true)
+				itemType.classList = classname + (iter === Number(poiId) ? ' up' : '')
+				itemType.setAttribute('data-id', iter)
+				itemType.title = element.name
+				itemType.textContent = element.ico
+				icolist.appendChild(itemType)
+				iter++;
+			});
+		}
+		document.getElementById('poiid').value = poiId ? Number(poiId) : this.currentSave.pois.length;
+		document.getElementById('poitype').value = this.currentPoi.type
+		document.getElementById('poiposx').value = this.currentPoi.pos.x
+		document.getElementById('poiposy').value = this.currentPoi.pos.y
+		document.getElementById('poiposz').value = this.currentPoi.pos.z
+		document.getElementById('poiname').value = this.currentPoi.name
+		document.getElementById('poicomment').value = this.currentPoi.comment
+		document.getElementById('poishop').checked = this.currentPoi.shop
+		document.getElementById('poiquest').checked = this.currentPoi.quest
 	}
 	removeModal() {
 		if (this.modalActive) {
@@ -182,12 +213,10 @@ class MapGrabber {
 		}
 	}
 	// -----------------------------------------------------------------------
-	// -----------------------------------------------------------------------
 	defineWorldDiv() {
 		let src = this.mapPath + this.currentSave.maps[this.currentMapNum].src
 		this.mapWidth = this.currentSave.maps[this.currentMapNum].width
 		this.mapHeight = this.currentSave.maps[this.currentMapNum].height
-		// console.log(src)
 		this.wordlDiv = document.getElementById('map')
 		if (this.wordlDiv) {
 			this.wordlDiv.textContent = "";
@@ -197,56 +226,12 @@ class MapGrabber {
 			this.wordlDiv.style.transformOrigin = 'top left'
 			document.body.appendChild(this.wordlDiv);
 		}
-
 		this.wordlDiv.style.left = "0px";
 		this.wordlDiv.style.top = "0px";
-		this.wordlDiv.style.width = (this.ratioZoom * this.mapWidth) + 'px';
-		this.wordlDiv.style.height = (this.ratioZoom * this.mapHeight) + 'px';
+		this.wordlDiv.style.width = (this.mapWidth) + 'px';
+		this.wordlDiv.style.height = (this.mapHeight) + 'px';
 		this.wordlDiv.style.backgroundImage = "url('" + src + "')";
-	}
-	// -----------------------------------------------------------------------
-	refreshBoardInfo() {
-		let needs = [
-			'posX', 'posY',
-			'mapName', 'MouseX', 'MouseY',
-			'OnMapX', 'OnMapY', 'OnMapZ',
-			'RealOnMapX', 'RealOnMapY',
-			'WinW', 'WinH',
-			'ratioZoom',
-			'mapwidth', 'mapheight',
-			'currentMapNum', 'currentGameNum'
-		]
-		let values = [
-			'MapPosx:' + this.MapPos.x + 'px',
-			'MapPosy:' + this.MapPos.y + 'px',
-			'mapName:' + this.currentSave.maps[this.currentMapNum].name,
-			'MouseX:' + this.mousePosition.x,
-			'MouseY:' + this.mousePosition.y,
-			'OnMapX:' + this.mousePositionOnMap.x,
-			'OnMapY:' + this.mousePositionOnMap.y,
-			'OnMapZ:' + this.mousePositionOnMap.z,
-			'RealOnMapX:' + this.realPositionOnMap.x,
-			'RealOnMapY:' + this.realPositionOnMap.y,
-			'WinW:' + window.innerWidth,
-			'WinH:' + window.innerHeight,
-			'ratioZoom:' + this.ratioZoom,
-			'mapwidth:' + (this.mapWidth * this.ratioZoom),
-			'mapheight:' + (this.mapHeight * this.ratioZoom),
-			'currentMapNum:' + this.currentMapNum,
-			'currentGameNum:' + this.currentGameNum,
-		]
-		let divs = {}
-		for (let index = 0; index < needs.length; index++) {
-			divs[needs[index]] = document.getElementById(needs[index])
-			if (!divs[needs[index]]) {
-				let newdiv = document.createElement('div');
-				newdiv.id = needs[index]
-				newdiv.className = 'info'
-				document.body.appendChild(newdiv)
-				divs[needs[index]] = newdiv
-			}
-			divs[needs[index]].textContent = values[index];
-		}
+		this.wordlDiv.style.backgroundSize = (this.mapWidth) + "px " + (this.mapHeight) + "px";
 	}
 	// -----------------------------------------------------------------------
 	refreshPoisPos() {
@@ -268,13 +253,14 @@ class MapGrabber {
 	addPoisToMap() {
 		let iter = 0
 		let poisCount = 0
-
+		this.allCurrentPois = []
 		this.currentSave.pois.forEach(
 			poi => {
 				// poi.id = iter
 				if (poi.mapid === this.currentMapNum) {
 					// item can be stored ... but ....
 					let item = this.createPoiDiv(iter, poi)
+					this.allCurrentPois.push(item)
 					poisCount++
 				}
 				iter++
@@ -294,25 +280,22 @@ class MapGrabber {
 		let poiDiv = this.createEle('div', 'poi poi_' + iter)
 		poiDiv.title = index.name + '\n' + index.comment
 
+		// work with this.zoom.getratio() = 1
 		let nicePos = this.nicePosition(index.pos.x, index.pos.y, 0)
-		let newX = (nicePos.x - this.icoHalfSize) * this.ratioZoom
-		let newY = (nicePos.y - this.icoHalfSize) * this.ratioZoom
+		let newX = (nicePos.x - this.icoHalfSize)
+		let newY = (nicePos.y - this.icoHalfSize)
 		poiDiv.style.left = newX + 'px'
 		poiDiv.style.top = newY + 'px'
-		// poiDiv.setAttribute('data-x', newX)
-		// poiDiv.setAttribute('data-y', newY)
+
 		poiDiv.setAttribute('data-i', iter)
 		poiDiv.setAttribute('data-x', index.pos.x)
 		poiDiv.setAttribute('data-y', index.pos.y)
 		poiDiv.setAttribute('data-type', index.type)
-
-		// console.log(index)
 		let ico = this.currentSave.types[index.type].ico
 		poiDiv.textContent = ico
-
-		poiDiv.addEventListener('click', () => {
-			// formPoiRefresh(iter, index)
-			console.log(index, this.currentSave.types[index.type].name)
+		poiDiv.addEventListener('click', (event) => {
+			let poiId = Number(event.target.getAttribute('data-i'))
+			if (!this.modalActive) this.addModal(Number(poiId));
 		})
 		this.wordlDiv.appendChild(poiDiv)
 		return poiDiv
@@ -323,13 +306,76 @@ class MapGrabber {
 		if (name) { if (!type) { ele.className = name } else { ele.id = name } }
 		return ele
 	}
+	// -----------------------------------------------------------------------
+	refreshBoardInfo() {
+		if (this.activeBoard) {
+			let needs = [
+				'currentMapNum',
+				'currentGameNum',
+				'currentMapName',
+				'MapPosx',
+				'MapPosy',
+				'this.mapOffset0',
+				'this.mapOffset1',
+				'mousePositionX',
+				'mousePositionY',
+				'mousePositionOnMapX',
+				'mousePositionOnMapY',
+				'mousePositionOnMapZ',
+				'realPositionOnMapX',
+				'realPositionOnMapY',
+				'WinnerWidth',
+				'WinnerHeight',
+				'zoomratio',
+				'mapWidth',
+				'mapheight',
+				'mapWidthXratio',
+				'mapheightXratio',
+			]
+			let values = [
+				'currentMapNum:' + this.currentMapNum,
+				'currentGameNum:' + this.currentGameNum,
+				'currentMapName:' + this.currentSave.maps[this.currentMapNum].name,
+				'MapPosx:' + this.MapPos.x + 'px',
+				'MapPosy:' + this.MapPos.y + 'px',
+				'this.mapOffset0:' + this.mapOffset[0],
+				'this.mapOffset1:' + this.mapOffset[1],
+
+				'mousePositionOnScreenX:' + this.mousePositionOnScreen.x,
+				'mousePositionOnScreenY:' + this.mousePositionOnScreen.y,
+
+				'mousePositionOnMapX:' + this.mousePositionOnMap.x,
+				'mousePositionOnMapY:' + this.mousePositionOnMap.y,
+				'mousePositionOnMapZ:' + this.mousePositionOnMap.z,
+
+				'realPositionOnMapX:' + this.realPositionOnMap.x,
+				'realPositionOnMapY:' + this.realPositionOnMap.y,
+
+				'WinnerWidth:' + window.innerWidth,
+				'WinnerHeight:' + window.innerHeight,
+				'zoomratio:' + this.zoom.getRatio(),
+				'mapWidth:' + (this.mapWidth),
+				'mapheight:' + (this.mapHeight),
+				'mapWidthXratio:' + (this.mapWidth * this.zoom.getRatio()),
+				'mapheightXratio:' + (this.mapHeight * this.zoom.getRatio()),
+			]
+			let divs = {}
+			let board = document.getElementById('board')
+			if (!board) { board = this.createEle('div', 'board', true); document.body.appendChild(board) }
+			for (let index = 0; index < needs.length; index++) {
+				divs[needs[index]] = document.getElementById(needs[index])
+				if (!divs[needs[index]]) {
+					let newdiv = document.createElement('div');
+					newdiv.id = needs[index]
+					newdiv.className = 'info'
+					board.appendChild(newdiv)
+					divs[needs[index]] = newdiv
+				}
+				divs[needs[index]].textContent = values[index];
+			}
+		}
+	}
 }
-
-
-
-
-
-
 
 
 
