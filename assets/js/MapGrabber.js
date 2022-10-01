@@ -152,7 +152,7 @@ class MapGrabber {
 				if (event.target.id === "topModalDiv") this.removeModal();
 			})
 			document.body.appendChild(this.topModalDiv)
-			this.refresh_currentPoiDatasForm(Number(poiId))
+			this.refresh_currentPoiDatasForm(poiId)
 		}
 	}
 	refresh_currentPoiDatasForm(poiId = false) {
@@ -162,7 +162,8 @@ class MapGrabber {
 		loopmap.style.height = this.mapHeight + 'px'
 		loopmap.style.backgroundImage = "url('" + this.mapPath + this.currentSave.maps[this.currentMapNum].src + "')";
 		loopmap.style.backgroundSize = (this.mapWidth) + "px " + (this.mapHeight) + "px";
-		if (poiId >= 0) {
+		console.log('Number', typeof poiId)
+		if (typeof poiId === 'number') {
 			this.currentPoi = this.currentSave.pois[poiId]
 		} else {
 			this.currentPoi = {
