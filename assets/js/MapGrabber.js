@@ -158,8 +158,8 @@ class MapGrabber {
 	refresh_currentPoiDatasForm(poiId = false) {
 
 		let loopmap = document.getElementById('loopmap')
-		loopmap.style.width = this.mapWidth + 'px'
-		loopmap.style.height = this.mapHeight + 'px'
+		// loopmap.style.width = this.mapWidth + 'px'
+		// loopmap.style.height = this.mapHeight + 'px'
 		loopmap.style.backgroundImage = "url('" + this.mapPath + this.currentSave.maps[this.currentMapNum].src + "')";
 		loopmap.style.backgroundSize = (this.mapWidth) + "px " + (this.mapHeight) + "px";
 		console.log('Number', typeof poiId)
